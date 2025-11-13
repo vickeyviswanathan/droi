@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WS-Dyson ROI Calculator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dyson-blue: #005A9C;
+            --dyson-accent: #FFC000;
+            --dyson-dark: #1F2937;
+            --dyson-light-blue: #F3F8FC;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dyson-light-blue); 
+        }
+        .card {
+            box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            border-radius: 1.5rem;
+        }
+        .dyson-bg {
+            background-color: var(--dyson-blue);
+        }
+        .accent-color {
+            color: var(--dyson-accent);
+        }
+        .accent-bg {
+            background-color: var(--dyson-accent);
+        }
+        .input-group {
+            position: relative;
+        }
+        .input-group::before {
+            content: '₹';
+            position: absolute;
+            left: 1rem;
+            top: 48%; /* Adjusted from 50% to 48% for better vertical alignment */
+            transform: translateY(-50%);
+            color: var(--dyson-dark); 
+            font-weight: 700;
+            z-index: 10;
+        }
+        input[type="number"] {
+            padding-left: 2.75rem !important;
+            border-width: 1px;
+            border-color: #D1D5DB;
+        }
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .highlight-metric {
+            background: linear-gradient(135deg, #FFEFB0 0%, #FFFFFF 100%);
+            border: 3px solid var(--dyson-accent);
+            color: var(--dyson-dark);
+            border-radius: 1rem;
+        }
+        .cta-button {
+            background-color: var(--dyson-accent);
+            color: var(--dyson-dark);
+            font-weight: 900;
+        }
+        
+        /* FIXED PROFIT GRID LAYOUT */
+        .profit-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr)); 
+            gap: 1.5rem;
+        }
+        .margin-metric {
+            grid-column: span 1 / span 1; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1.5rem;
+            min-height: 180px;
+        }
+        
+        .monetary-metrics-flex-container {
+            grid-column: span 1 / span 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        
+        /* FIXED: Better sizing for monetary value boxes */
+        .small-metric {
+            flex: 1 1 calc(33.333% - 1rem);
+            min-width: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1.25rem 0.75rem;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+
+        /* FIXED: Responsive font sizing with proper overflow handling */
+        .monetary-value {
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            font-weight: 900;
+            line-height: 1.2;
+            word-break: break-word;
+            text-align: center;
+            width: 100%;
+        }
+        
+        /* Label sizing */
+        .small-metric p:first-child {
+            font-size: clamp(0.7rem, 1.5vw, 0.875rem);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1279px) {
+            .profit-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+            .margin-metric {
+                grid-column: span 1 / span 1;
+                padding: 1.5rem;
+                min-height: 160px;
+            }
+            .monetary-metrics-flex-container {
+                grid-column: span 1 / span 1;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            .small-metric {
+                flex: 1 1 calc(33.333% - 1rem);
+                min-width: 120px;
+                padding: 1.25rem 0.5rem;
+            }
+            .monetary-value {
+                font-size: clamp(0.95rem, 1.8vw, 1.25rem);
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .profit-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .margin-metric, .monetary-metrics-flex-container {
+                grid-column: span 1 / span 1;
+            }
+            .margin-metric {
+                padding: 1.25rem;
+                min-height: 140px;
+            }
+            .monetary-metrics-flex-container {
+                flex-direction: column;
+            }
+            .small-metric {
+                flex: 1 1 100%;
+                width: 100%;
+                min-width: unset;
+                padding: 1rem;
+            }
+            .margin-metric .text-6xl {
+                font-size: 3rem !important;
+                line-height: 1; 
+            }
+            .monetary-value {
+                font-size: 1.25rem;
+            }
+        }
+        /* LOGO REMOVAL CLEANUP */
+        .header-container {
+            padding: 2rem 1rem;
+        }
+        
+        .header-title {
+            text-align: center;
+            margin: 0 auto;
+            max-width: 900px;
+        }
+
+        /* Mobile: Centered title */
+        @media (max-width: 768px) {
+            .header-container {
+                padding: 1.5rem 1rem;
+            }
+            
+            .header-title {
+                padding: 0 1rem;
+                font-size: 2rem !important;
+            }
+            
+            .header-subtitle {
+                font-size: 1rem !important;
+                margin-top: 0.75rem !important;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .header-title {
+                font-size: 1.75rem !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-12">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header Section: Cleaned for Title Only -->
+        <header class="text-center dyson-bg text-white card mb-12">
+            <div class="header-container">
+                <!-- Main Title -->
+                <div class="header-title">
+                    <h1 class="text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter uppercase leading-tight">WS-DYSON ROI CALCULATOR</h1>
+                </div>
+            </div>
+            <p class="header-subtitle text-xl md:text-2xl font-light opacity-80 pb-6">High-Margin, Low-Maintenance Profit Simulation</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            
+            <!-- Calculator Input -->
+            <div class="lg:col-span-1 card bg-white p-8 h-fit border-t-6 border-dyson-blue">
+                <h2 class="text-3xl font-extrabold text-gray-800 border-b pb-4 mb-8 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H7M17 19H7M5 12h14" /></svg>
+                    Your Financial Levers
+                </h2>
+                
+                <!-- Error Notification Area -->
+                <div id="pricing-error-notification" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-6 transition-all duration-300">
+                    <strong class="font-bold">Error:</strong> 
+                    <span class="block sm:inline">Pricing Inputted is not Agreed. Reverting to agreed default.</span>
+                </div>
+
+                <form id="profit-form" class="space-y-6">
+
+                    <!-- Product Selector Dropdown -->
+                    <div>
+                        <label for="productSelector" class="block text-sm font-bold text-gray-700">Select Dyson Airblade Model</label>
+                        <select id="productSelector" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 border-2">
+                            <option value="HU02N" selected>Airblade V HU02 Hand dryer "Nickel"</option>
+                            <option value="HU02W">Airblade V HU02 Hand dryer "White"</option>
+                            <option value="HU03SS">Airblade 9KJ HU03 Hand Dryer "SS"</option>
+                            <option value="WD04">Airblade WD 04 "Short Neck"</option>
+                            <option value="WD05">Airblade WD 05 "Long Neck"</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1 font-bold text-blue-600">Selecting a model enforces specific pricing rules.</p>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="clientSalePrice" class="block text-sm font-bold text-gray-700">Client Sale Price (Per Unit ₹)</label>
+                        <input type="number" id="clientSalePrice" value="60000" min="58000" max="66000" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1">The final price your client pays (MSRP).</p>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="distributorCOGS" class="block text-sm font-bold text-gray-700">Landing Price (COGS per Unit ₹)</label>
+                        <input type="number" id="distributorCOGS" value="52500" min="49000" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1 font-bold text-green-700">Your acquisition cost. Guarantees your high margin.</p>
+                    </div>
+
+                    <div>
+                        <label for="annualVolume" class="block text-sm font-bold text-gray-700">Annual Unit Volume Target</label>
+                        <input type="number" id="annualVolume" value="120" min="10" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1">Projected units sold (e.g., 20 clients buying 6 units each).</p>
+                    </div>
+                    
+                    <div>
+                        <label for="initialStock" class="block text-sm font-bold text-gray-700">Initial Stock Order (Units)</label>
+                        <input type="number" id="initialStock" value="25" min="1" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1">Units required on hand to service a large initial order.</p>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="overheadSavings" class="block text-sm font-bold text-gray-700">Annual Soft Cost Savings (₹)</label>
+                        <input type="number" id="overheadSavings" value="150000" min="0" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1">Savings from reduced logistics and management of low-value, high-volume consumables.</p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results & Key Metrics -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <div class="card bg-white p-8 border-t-8 border-dyson-accent">
+                    <h2 class="text-3xl font-black text-gray-900 pb-4 mb-8 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-dyson-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        The Opportunity: Your Profit Breakdown
+                    </h2>
+                    
+                    <div class="profit-grid">
+                        
+                        <!-- Margin Percentage -->
+                        <div class="highlight-metric text-center shadow-xl margin-metric">
+                            <p class="text-lg font-bold text-gray-700 uppercase whitespace-nowrap">Protected Margin</p>
+                            <p id="margin-percentage" class="text-6xl md:text-5xl lg:text-6xl font-black mt-2 leading-none">0%</p>
+                        </div>
+
+                        <!-- Monetary Metrics -->
+                        <div class="monetary-metrics-flex-container">
+                            <div class="bg-green-50 text-center small-metric">
+                                <p class="font-bold text-gray-600 uppercase whitespace-nowrap">Profit / Unit</p>
+                                <p id="profit-per-unit" class="font-black text-green-700 mt-1 leading-none monetary-value">₹0</p>
+                            </div>
+                            
+                            <div class="bg-blue-50 text-center small-metric">
+                                <p class="font-bold text-gray-600 uppercase">Annual Net Profit</p>
+                                <p id="annual-gross-profit" class="font-black text-blue-700 mt-1 leading-none monetary-value">₹0</p>
+                            </div>
+                            
+                            <div class="highlight-metric text-center small-metric">
+                                <p class="font-bold text-gray-600 uppercase">5-Year Potential</p>
+                                <p id="five-year-profit-potential" class="font-black mt-1 leading-none monetary-value">₹0</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ROI & Payback Timeline -->
+                <div class="card bg-white p-8">
+                    <h2 class="text-3xl font-extrabold text-gray-800 border-b pb-4 mb-6 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-dyson-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        ROI & Stock Liquidation Timeline
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div class="text-center p-3 border-b md:border-b-0 md:border-r border-gray-300">
+                            <p class="text-sm font-semibold text-gray-600">Initial Stock Investment (CAPEX)</p>
+                            <p id="total-stock-capex" class="text-2xl font-black text-red-600 mt-1">₹0</p>
+                        </div>
+                        <div class="text-center p-3">
+                            <p class="text-sm font-semibold text-gray-600">Units Required for Full Payback</p>
+                            <p id="stock-payback-months" class="text-2xl font-black text-green-700 mt-1">0 Sales</p>
+                        </div>
+                    </div>
+
+                    <div class="mb-8">
+                        <p class="text-lg font-bold text-gray-800 mb-3">Annual Sales Goal Progress vs. Stock Investment:</p>
+                        <div class="w-full bg-gray-200 rounded-full h-8 overflow-hidden">
+                            <div id="progress-bar" class="h-full accent-bg text-sm font-black text-gray-900 flex items-center justify-end pr-3 transition-all duration-500" style="width: 0%">0%</div>
+                        </div>
+                        <p id="sales-to-recoup" class="text-sm text-gray-600 mt-2 text-center font-medium">Sell 0 units to break even on stock investment.</p>
+                    </div>
+
+                    <div class="p-6 dyson-bg text-white rounded-xl text-center mt-8 shadow-2xl">
+                        <p class="text-2xl font-black mb-3">LOCK IN YOUR EXCLUSIVE MARGINS</p>
+                        <p class="text-lg font-light mb-5">Click below to receive our full Distributor Prospectus and territory reservation details.</p>
+                        <a href="https://products.workstore.in/" class="inline-block px-10 py-4 cta-button rounded-full text-xl hover:bg-yellow-400 transition duration-300 shadow-2xl transform hover:scale-105">
+                            START PARTNERSHIP NOW
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- Product Data Mapping ---
+        const productData = {
+            'HU02N': {
+                name: 'Airblade V HU02 Hand dryer "Nickel"',
+                defaultSale: 60000, maxSale: 66000, minSale: 58000,
+                defaultCogs: 52500, minCogs: 49000
+            },
+            'HU02W': {
+                name: 'Airblade V HU02 Hand dryer "White"',
+                defaultSale: 60000, maxSale: 66000, minSale: 58000,
+                defaultCogs: 52500, minCogs: 49000
+            },
+            'HU03SS': {
+                name: 'Airblade 9KJ HU03 Hand Dryer "SS"',
+                defaultSale: 95000, maxSale: 110000, minSale: 90000,
+                defaultCogs: 87250, minCogs: 87250
+            },
+            'WD04': {
+                name: 'Airblade WD 04 "Short Neck"',
+                defaultSale: 128000, maxSale: 147000, minSale: 123000,
+                defaultCogs: 119000, minCogs: 119000
+            },
+            'WD05': {
+                name: 'Airblade WD 05 "Long Neck"',
+                defaultSale: 128000, maxSale: 147000, minSale: 123000,
+                defaultCogs: 119000, minCogs: 119000
+            }
+        };
+
+        // --- Caching DOM Elements (Efficiency Improvement) ---
+        let DOMElements = {};
+        let currentProductDefaults = productData['HU02N'];
+
+        // Currency formatter for Indian Rupees (INR)
+        const currencyFormatter = new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 0, 
+            maximumFractionDigits: 0
+        });
+
+        const formatCurrency = (amount) => {
+            return currencyFormatter.format(amount);
+        };
+
+        const handleCtaClick = (event) => {
+            // Note: The click handler is now redundant as the href attribute is set, 
+            // but the function remains for legacy compatibility and to prevent default console logging.
+            console.log("Navigating to https://products.workstore.in/");
+        };
+
+        const updateProductConstraints = () => {
+            const selector = DOMElements.productSelector;
+            const selectedKey = selector.value;
+            const data = productData[selectedKey];
+            
+            currentProductDefaults = data; 
+
+            // Update Sale Price Constraints and Default
+            DOMElements.clientSalePriceInput.value = data.defaultSale;
+            DOMElements.clientSalePriceInput.min = data.minSale;
+            DOMElements.clientSalePriceInput.max = data.maxSale;
+
+            // Update COGS Constraints and Default
+            DOMElements.distributorCOGSInput.value = data.defaultCogs;
+            DOMElements.distributorCOGSInput.min = data.minCogs;
+            DOMElements.distributorCOGSInput.max = ''; 
+
+            calculateDistributorProfit();
+        };
+
+        const calculateDistributorProfit = () => {
+            // Read values (now using cached elements)
+            let clientSalePrice = parseFloat(DOMElements.clientSalePriceInput.value) || 0;
+            let distributorCOGS = parseFloat(DOMElements.distributorCOGSInput.value) || 0;
+            const annualVolume = parseFloat(DOMElements.annualVolumeInput.value) || 0;
+            const initialStock = parseFloat(DOMElements.initialStockInput.value) || 0;
+            const overheadSavings = parseFloat(DOMElements.overheadSavingsInput.value) || 0;
+
+            // --- Validation and Reversion (Triggered on Blur for price fields) ---
+            let pricingBreachOccurred = false;
+            
+            const maxSale = parseFloat(DOMElements.clientSalePriceInput.max);
+            const minSale = parseFloat(DOMElements.clientSalePriceInput.min);
+            const minCogs = parseFloat(DOMElements.distributorCOGSInput.min);
+            
+            // 1. Check Client Sale Price
+            if (clientSalePrice > maxSale || clientSalePrice < minSale) {
+                 DOMElements.clientSalePriceInput.value = currentProductDefaults.defaultSale; 
+                 clientSalePrice = currentProductDefaults.defaultSale;
+                 pricingBreachOccurred = true;
+            }
+             
+            // 2. Check Landing Price (COGS)
+            if (distributorCOGS < minCogs) {
+                 DOMElements.distributorCOGSInput.value = currentProductDefaults.defaultCogs; 
+                 distributorCOGS = currentProductDefaults.defaultCogs;
+                 pricingBreachOccurred = true;
+            }
+
+            // Display or hide error notification
+            DOMElements.errorNotification.classList.toggle('hidden', !pricingBreachOccurred);
+            
+            // --- Input Validity Check (For non-calculation state) ---
+            let isValid = clientSalePrice > distributorCOGS && clientSalePrice > 0 && distributorCOGS > 0 && annualVolume > 0;
+
+            if (!isValid) {
+                const initialStockInvestment = initialStock * distributorCOGS;
+                const zeroCurrency = formatCurrency(0);
+                
+                DOMElements.marginPercentage.textContent = 'N/A';
+                DOMElements.profitPerUnit.textContent = zeroCurrency;
+                DOMElements.annualGrossProfit.textContent = zeroCurrency;
+                DOMElements.fiveYearProfitPotential.textContent = zeroCurrency;
+                DOMElements.totalStockCapex.textContent = formatCurrency(initialStockInvestment);
+                DOMElements.stockPaybackMonths.textContent = 'Cannot calculate';
+                DOMElements.progressBar.style.width = '0%';
+                DOMElements.progressBar.textContent = '0%';
+                DOMElements.salesToRecoup.textContent = 'Margin must be positive (Sale Price > Landing Price).';
+                return;
+            }
+
+            // --- Core Calculations ---
+            const profitPerUnit = clientSalePrice - distributorCOGS;
+            const annualGrossProfit = profitPerUnit * annualVolume;
+            const annualNetProfit = annualGrossProfit + overheadSavings;
+            const fiveYearProfitPotential = (annualNetProfit * 5);
+            const marginPercentage = (profitPerUnit / clientSalePrice) * 100;
+            const initialStockInvestment = initialStock * distributorCOGS;
+            
+            const unitsToRecoupStock = Math.ceil(initialStockInvestment / profitPerUnit);
+            const paybackMonths = (unitsToRecoupStock / annualVolume) * 12;
+            
+            let paybackText = `${unitsToRecoupStock.toLocaleString()} Units`;
+            if (paybackMonths <= 12) {
+                paybackText += ` (~${Math.ceil(paybackMonths)} Months)`;
+            } else {
+                paybackText += ` (~${(paybackMonths / 12).toFixed(1)} Years)`;
+            }
+
+            // --- Update UI ---
+            DOMElements.marginPercentage.textContent = `${marginPercentage.toFixed(1)}%`;
+            DOMElements.profitPerUnit.textContent = formatCurrency(profitPerUnit);
+            DOMElements.annualGrossProfit.textContent = formatCurrency(annualNetProfit);
+            DOMElements.fiveYearProfitPotential.textContent = formatCurrency(fiveYearProfitPotential);
+            DOMElements.totalStockCapex.textContent = formatCurrency(initialStockInvestment);
+            DOMElements.stockPaybackMonths.textContent = paybackText;
+            DOMElements.salesToRecoup.textContent = `Sell ${unitsToRecoupStock.toLocaleString()} units to liquidate your initial stock investment and start pure profit generation.`;
+
+            // Update Progress Bar
+            const progressPercentage = (annualVolume / unitsToRecoupStock) * 100;
+            const displayPercentage = Math.min(100, progressPercentage);
+
+            const progressBar = DOMElements.progressBar;
+            progressBar.style.width = `${displayPercentage}%`;
+            progressBar.textContent = `${progressPercentage.toFixed(0)}%`;
+
+            // Style progress bar based on performance
+            const isTargetMet = progressPercentage >= 100;
+            progressBar.classList.toggle('bg-green-600', isTargetMet);
+            progressBar.classList.toggle('text-white', isTargetMet);
+            progressBar.classList.toggle('accent-bg', !isTargetMet);
+            progressBar.classList.toggle('text-gray-900', !isTargetMet);
+            
+            if (isTargetMet) {
+                progressBar.textContent = '100%+ Stock Profit Covered Annually!';
+            } else {
+                // Adjust text position for readability if progress is low
+                const isLowProgress = displayPercentage < 20;
+                progressBar.style.justifyContent = isLowProgress ? 'flex-start' : 'flex-end';
+                progressBar.style.paddingLeft = isLowProgress ? '0.75rem' : '0';
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Cache all necessary DOM elements once
+            DOMElements = {
+                clientSalePriceInput: document.getElementById('clientSalePrice'),
+                distributorCOGSInput: document.getElementById('distributorCOGS'),
+                annualVolumeInput: document.getElementById('annualVolume'),
+                initialStockInput: document.getElementById('initialStock'),
+                overheadSavingsInput: document.getElementById('overheadSavings'),
+                productSelector: document.getElementById('productSelector'),
+                errorNotification: document.getElementById('pricing-error-notification'),
+                marginPercentage: document.getElementById('margin-percentage'),
+                profitPerUnit: document.getElementById('profit-per-unit'),
+                annualGrossProfit: document.getElementById('annual-gross-profit'),
+                fiveYearProfitPotential: document.getElementById('five-year-profit-potential'),
+                totalStockCapex: document.getElementById('total-stock-capex'),
+                stockPaybackMonths: document.getElementById('stock-payback-months'),
+                progressBar: document.getElementById('progress-bar'),
+                salesToRecoup: document.getElementById('sales-to-recoup'),
+            };
+
+            // 1. Price fields trigger validation/reversion ONLY on blur (when tabbing out)
+            DOMElements.clientSalePriceInput.addEventListener('blur', calculateDistributorProfit);
+            DOMElements.distributorCOGSInput.addEventListener('blur', calculateDistributorProfit);
+
+            // 2. Volume/Stock/Savings fields trigger calculation on input (instant update)
+            [DOMElements.annualVolumeInput, DOMElements.initialStockInput, DOMElements.overheadSavingsInput].forEach(input => {
+                input.addEventListener('input', calculateDistributorProfit);
+            });
+            
+            // 3. Product selector changes both constraints and calculates
+            DOMElements.productSelector.addEventListener('change', updateProductConstraints);
+            
+            // Run initial setup based on default selection
+            updateProductConstraints();
+        });
+    </script>
+</body>
+</html>
