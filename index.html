@@ -39,7 +39,7 @@
             content: '₹';
             position: absolute;
             left: 1rem;
-            top: 48%; /* Adjusted from 50% to 48% for better vertical alignment */
+            top: 48%; /* Adjusted for vertical alignment */
             transform: translateY(-50%);
             color: var(--dyson-dark); 
             font-weight: 700;
@@ -279,10 +279,30 @@
                         <p class="text-xs text-gray-500 mt-1">Units required on hand to service a large initial order.</p>
                     </div>
 
+                    <!-- New Operational Cost Inputs -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <h3 class="text-lg font-bold text-red-700 mb-3 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                            Annual Operational Expenses
+                        </h3>
+                    </div>
+
                     <div class="input-group">
-                        <label for="overheadSavings" class="block text-sm font-bold text-gray-700">Annual Soft Cost Savings (₹)</label>
-                        <input type="number" id="overheadSavings" value="150000" min="0" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500" required>
-                        <p class="text-xs text-gray-500 mt-1">Savings from reduced logistics and management of low-value, high-volume consumables.</p>
+                        <label for="manpowerCost" class="block text-sm font-bold text-gray-700">1) Manpower (₹)</label>
+                        <input type="number" id="manpowerCost" value="150000" min="0" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1">Cost for dedicated sales/technical staff.</p>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="demoTravelCost" class="block text-sm font-bold text-gray-700">2) Demo/Travel Cost (₹)</label>
+                        <input type="number" id="demoTravelCost" value="50000" min="0" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1">Cost for product demonstrations and client site visits.</p>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="backendCost" class="block text-sm font-bold text-gray-700">3) Backend Cost (₹)</label>
+                        <input type="number" id="backendCost" value="25000" min="0" class="mt-1 block w-full rounded-lg border-gray-300 p-3 focus:ring-blue-500 focus:border-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1">Administrative, warranty, and low-volume overhead.</p>
                     </div>
                 </form>
             </div>
@@ -369,12 +389,12 @@
             'HU02N': {
                 name: 'Airblade V HU02 Hand dryer "Nickel"',
                 defaultSale: 60000, maxSale: 66000, minSale: 58000,
-                defaultCogs: 53500, minCogs: 52500
+                defaultCogs: 52500, minCogs: 49000
             },
             'HU02W': {
                 name: 'Airblade V HU02 Hand dryer "White"',
                 defaultSale: 60000, maxSale: 66000, minSale: 58000,
-                defaultCogs: 53500, minCogs: 52500
+                defaultCogs: 52500, minCogs: 49000
             },
             'HU03SS': {
                 name: 'Airblade 9KJ HU03 Hand Dryer "SS"',
@@ -410,8 +430,6 @@
         };
 
         const handleCtaClick = (event) => {
-            // Note: The click handler is now redundant as the href attribute is set, 
-            // but the function remains for legacy compatibility and to prevent default console logging.
             console.log("Navigating to https://products.workstore.in/");
         };
 
@@ -441,7 +459,14 @@
             let distributorCOGS = parseFloat(DOMElements.distributorCOGSInput.value) || 0;
             const annualVolume = parseFloat(DOMElements.annualVolumeInput.value) || 0;
             const initialStock = parseFloat(DOMElements.initialStockInput.value) || 0;
-            const overheadSavings = parseFloat(DOMElements.overheadSavingsInput.value) || 0;
+            
+            // Read new operational costs
+            const manpowerCost = parseFloat(DOMElements.manpowerCostInput.value) || 0;
+            const demoTravelCost = parseFloat(DOMElements.demoTravelCostInput.value) || 0;
+            const backendCost = parseFloat(DOMElements.backendCostInput.value) || 0;
+            
+            const totalAnnualExpenses = manpowerCost + demoTravelCost + backendCost;
+
 
             // --- Validation and Reversion (Triggered on Blur for price fields) ---
             let pricingBreachOccurred = false;
@@ -489,7 +514,10 @@
             // --- Core Calculations ---
             const profitPerUnit = clientSalePrice - distributorCOGS;
             const annualGrossProfit = profitPerUnit * annualVolume;
-            const annualNetProfit = annualGrossProfit + overheadSavings;
+            
+            // Annual Net Profit is Gross Profit MINUS Annual Expenses
+            const annualNetProfit = annualGrossProfit - totalAnnualExpenses;
+            
             const fiveYearProfitPotential = (annualNetProfit * 5);
             const marginPercentage = (profitPerUnit / clientSalePrice) * 100;
             const initialStockInvestment = initialStock * distributorCOGS;
@@ -507,7 +535,7 @@
             // --- Update UI ---
             DOMElements.marginPercentage.textContent = `${marginPercentage.toFixed(1)}%`;
             DOMElements.profitPerUnit.textContent = formatCurrency(profitPerUnit);
-            DOMElements.annualGrossProfit.textContent = formatCurrency(annualNetProfit);
+            DOMElements.annualGrossProfit.textContent = formatCurrency(annualNetProfit); // Displaying Net Profit
             DOMElements.fiveYearProfitPotential.textContent = formatCurrency(fiveYearProfitPotential);
             DOMElements.totalStockCapex.textContent = formatCurrency(initialStockInvestment);
             DOMElements.stockPaybackMonths.textContent = paybackText;
@@ -545,7 +573,11 @@
                 distributorCOGSInput: document.getElementById('distributorCOGS'),
                 annualVolumeInput: document.getElementById('annualVolume'),
                 initialStockInput: document.getElementById('initialStock'),
-                overheadSavingsInput: document.getElementById('overheadSavings'),
+                // New elements
+                manpowerCostInput: document.getElementById('manpowerCost'),
+                demoTravelCostInput: document.getElementById('demoTravelCost'),
+                backendCostInput: document.getElementById('backendCost'),
+                
                 productSelector: document.getElementById('productSelector'),
                 errorNotification: document.getElementById('pricing-error-notification'),
                 marginPercentage: document.getElementById('margin-percentage'),
@@ -562,8 +594,10 @@
             DOMElements.clientSalePriceInput.addEventListener('blur', calculateDistributorProfit);
             DOMElements.distributorCOGSInput.addEventListener('blur', calculateDistributorProfit);
 
-            // 2. Volume/Stock/Savings fields trigger calculation on input (instant update)
-            [DOMElements.annualVolumeInput, DOMElements.initialStockInput, DOMElements.overheadSavingsInput].forEach(input => {
+            // 2. Volume/Stock/Expense fields trigger calculation on input (instant update)
+            [DOMElements.annualVolumeInput, DOMElements.initialStockInput, 
+             DOMElements.manpowerCostInput, DOMElements.demoTravelCostInput, 
+             DOMElements.backendCostInput].forEach(input => {
                 input.addEventListener('input', calculateDistributorProfit);
             });
             
